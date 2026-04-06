@@ -1,0 +1,59 @@
+{
+  "name": "akari-docs",
+  "description": "Akari-Docs is a zero-bloat documentation framework built for speed, simplicity, and clean markdown-driven publishing.",
+  "private": false,
+  "version": "0.1.2",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "style": "./dist/style.css",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./plugin": {
+      "types": "./dist/plugin.d.ts",
+      "import": "./dist/plugin.js",
+      "default": "./dist/plugin.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build && node -e \"const fs=require('node:fs');const path=require('node:path');fs.copyFileSync('src/index.d.ts','dist/index.d.ts');fs.copyFileSync('src/plugin.d.ts','dist/plugin.d.ts');const css=fs.readdirSync('dist').find((name)=>name.endsWith('.css'));if(css){fs.copyFileSync(path.join('dist',css),path.join('dist','style.css'));}\"",
+    "preview": "vite preview",
+    "test": "vitest run --passWithNoTests",
+    "prepublishOnly": "npm run test && npm run build"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.30",
+    "vue-router": "^5.0.4"
+  },
+  "dependencies": {
+    "lucide-vue-next": "^1.0.0",
+    "marked": "^13.0.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.15",
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/node": "^24.12.0",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "@vue/tsconfig": "^0.9.0",
+    "tailwindcss": "^4.2.2",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.1",
+    "vitest": "^2.1.9",
+    "vue": "^3.5.30",
+    "vue-router": "^5.0.4",
+    "vue-tsc": "^3.2.5"
+  }
+}

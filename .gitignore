@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+dist-ssr/
+*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+bun.lockb
+*.log
+
+# Editor folders & OS files
+.idea/
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Vite / Vue / Bun specific
+.github/
+.vscode/
+/vercel.json
+/.vercel/
+.netlify/
+.output/
