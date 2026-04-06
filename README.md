@@ -229,3 +229,9 @@ Example publish flow:
 npm adduser
 npm publish --access public
 ```
+
+## Support
+
+If you find **Akari-Docs** helpful and want to support my work, you can buy me a coffee\! ☕✨
+
+[<b>Ko-Fi<b>](https://ko-fi.com/oatmealxxii) or [<b>Buy me a coffee<b>](https://buymeacoffee.com/oatmealxxii)
