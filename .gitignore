@@ -28,7 +28,7 @@ Thumbs.db
 # Vite / Vue / Bun specific
 .github/
 .vscode/
-/vercel.json
-/.vercel/
+.vercel/
 .netlify/
 .output/
+.vercel
