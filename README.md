@@ -95,6 +95,22 @@ If your app does not already include them:
 npm install vue vue-router
 ```
 
+## Starter Template (init)
+
+For the simplest developer experience, use one package with an init command.
+
+```bash
+npx akari-docs init my-docs
+```
+
+This scaffolds a starter project based on the current preview architecture.
+
+For local testing in this repository:
+
+```bash
+npm run init:starter:local
+```
+
 ## Quick Start
 
 Follow this sequence to wire Akari-Docs into a standard Vue + Vite project.
@@ -144,12 +160,27 @@ createApp(App).mount("#app");
 
 ### 3) Render markdown pages with `Layout` (`src/App.vue`)
 
+For a simpler integration, use `createDocsRuntime` and pass only arguments. It gives you ready-to-use state and handlers (`currentModule`, `tocItems`, `navigatorItems`, `onPageChange`) with minimal wiring.
+
+If you are testing **inside this repository/project** (without consuming the published npm package), import your local layout component:
+
+```ts
+import Layout from "./components/LocalLayout.vue";
+```
+
+If you are consuming the published package in another app, keep using:
+
+```ts
+import { Layout } from "akari-docs";
+```
+
 ```vue
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
-import { Layout } from "akari-docs";
+import Layout from "./components/LocalLayout.vue";
 import { markdownIndex } from "virtual:akari-md-index";
+import { createDocsRuntime } from "akari-docs";
 
 interface MarkdownHeading {
   readonly level: number;
@@ -168,44 +199,29 @@ const markdownModules = import.meta.glob<LoadedMarkdownModule>(
 );
 
 const currentSlug = ref("introduction");
-const currentModule = ref<LoadedMarkdownModule | null>(null);
 const router = useRouter();
 
-const pageBySlug = computed(() =>
-  Object.fromEntries(markdownIndex.map((item) => [item.slug, item])),
-);
-
-const tocItems = computed(() => {
-  const page = pageBySlug.value[currentSlug.value];
-  return (page?.headings ?? [])
-    .filter((h) => h.level >= 2 && h.level <= 3)
-    .map((h) => ({ label: h.text, href: `#${h.id}`, level: h.level }));
+const docs = createDocsRuntime({
+  markdownModules,
+  pageIndex: markdownIndex,
+  locale: "en",
+  initialSlug: "introduction",
 });
 
-const navigatorItems = computed(() =>
-  markdownIndex.map((item) => ({
-    label: item.label,
-    href: item.href,
-    slug: item.slug,
-    isActive: item.slug === currentSlug.value,
-  })),
-);
+const currentModule = computed(() => docs.currentModule.value);
+const currentSlugRef = computed(() => docs.currentSlug.value);
+const tocItems = computed(() => docs.tocItems.value);
+const navigatorItems = computed(() => docs.navigatorItems.value);
 
 async function loadPage(slug: string) {
-  const target = pageBySlug.value[slug] ? slug : (markdownIndex[0]?.slug ?? "");
-  if (!target) return;
-
-  const loader = markdownModules[`./content/${target}.md`];
-  if (!loader) return;
-
-  currentModule.value = await loader();
-  currentSlug.value = target;
+  await docs.loadPage(slug, "en");
 }
 
 function handlePageChange(slug: string) {
-  if (!slug || slug === currentSlug.value) return;
-  void router.push({ path: `/en/${slug}` }).catch(() => {
-    void loadPage(slug);
+  void docs.onPageChange(slug, async (nextSlug, locale) => {
+    await router.push({ path: `/${locale}/${nextSlug}` }).catch(async () => {
+      await docs.loadPage(nextSlug, locale);
+    });
   });
 }
 </script>
@@ -215,7 +231,7 @@ function handlePageChange(slug: string) {
     :frontmatter="currentModule?.metadata"
     :toc-items="tocItems"
     :navigator-items="navigatorItems"
-    :current-slug="currentSlug"
+    :current-slug="currentSlugRef"
     :on-page-change="handlePageChange"
   >
     <component :is="currentModule?.default" v-if="currentModule" />

@@ -1,7 +1,7 @@
 ---
 title: API Reference
 author: Akari Team
-description: Public APIs for akariMarkdownPlugin and Layout.
+description: Package exports, plugin hooks, and layout API surface.
 order: 3
 ---
 
@@ -9,8 +9,14 @@ order: 3
 
 ## Package Exports
 
+| Import Path            | What You Get                                                       |
+| ---------------------- | ------------------------------------------------------------------ |
+| `akari-docs`           | `Layout`, `akariMarkdownPlugin`, runtime helpers, and public types |
+| `akari-docs/plugin`    | Plugin-only entry (`akariMarkdownPlugin`)                          |
+| `akari-docs/style.css` | Stable stylesheet export                                           |
+
 ```ts
-import { akariMarkdownPlugin, Layout } from "akari-docs";
+import { akariMarkdownPlugin, createDocsRuntime, Layout } from "akari-docs";
 import type {
   FrontmatterData,
   FrontmatterValue,
@@ -21,12 +27,6 @@ import type {
 } from "akari-docs";
 ```
 
-Plugin-only import path:
-
-```ts
-import { akariMarkdownPlugin } from "akari-docs/plugin";
-```
-
 ## `akariMarkdownPlugin(options?)`
 
 Creates a Vite plugin that:
@@ -34,6 +34,7 @@ Creates a Vite plugin that:
 - Parses markdown frontmatter.
 - Adds heading IDs.
 - Exposes heading metadata for navigation.
+- Supports hooks for transform and render customization.
 
 ### Type
 
@@ -89,6 +90,52 @@ interface FrontmatterData {
 ```
 
 If `frontmatter` is missing, Layout uses safe defaults for title, author, and description.
+
+## Runtime Helper API
+
+```ts
+createDocsRuntime({
+  markdownModules,
+  pageIndex: markdownIndex,
+  locale: "en",
+  initialSlug: "introduction",
+});
+```
+
+Use `createDocsRuntime` when you want one-call setup for `currentModule`, `tocItems`, `navigatorItems`, and `onPageChange`.
+
+## Plugin Hooks
+
+`akariMarkdownPlugin` accepts optional hooks:
+
+- `transform(document)`
+- `render(document, next)`
+- `transformHtml(html, document)`
+
+Example:
+
+```ts
+import { akariMarkdownPlugin } from "akari-docs";
+
+akariMarkdownPlugin({
+  hooks: [
+    {
+      transform(document) {
+        return {
+          ...document,
+          metadata: {
+            ...document.metadata,
+            source: "docs",
+          },
+        };
+      },
+      transformHtml(html) {
+        return html.replaceAll("TODO", "");
+      },
+    },
+  ],
+});
+```
 
 ## Footer Types
 

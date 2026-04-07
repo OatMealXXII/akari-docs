@@ -2,6 +2,9 @@ import "./style.css";
 
 export { akariMarkdownPlugin } from "./plugin";
 export { default as Layout } from "./theme/Layout.vue";
+export { default as LocalLayout } from "./components/LocalLayout.vue";
+export { createDocsApi } from "./runtime/docs-api";
+export { createDocsRuntime } from "./runtime/docs-api";
 export type {
   FrontmatterData,
   FrontmatterValue,
@@ -12,6 +15,15 @@ export type {
   NavItem,
   TocItem,
 } from "./theme/Layout.vue";
+export type {
+  CreateDocsApiOptions,
+  DocsApi,
+  DocsApiHeading,
+  DocsApiLoadedModule,
+  DocsApiPageIndexItem,
+  CreateDocsRuntimeOptions,
+  DocsRuntime,
+} from "./runtime/docs-api";
 export type {
   AkariMarkdownDocument,
   AkariMarkdownHeading,

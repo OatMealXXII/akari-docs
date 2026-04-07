@@ -1,13 +1,35 @@
 ---
 title: Getting Started
 author: Akari Team
-description: Install Akari-Docs and configure it in a Vite project.
+description: Install, initialize, and wire Akari-Docs into a Vue + Vite app.
 order: 2
 ---
 
 # Getting Started
 
-## File Map
+## Install
+
+```bash
+npm install akari-docs
+```
+
+`vue` and `vue-router` are peer dependencies.
+
+If your app does not already include them:
+
+```bash
+npm install vue vue-router
+```
+
+## Starter Template (init)
+
+For the simplest developer experience, use one package with an init command.
+
+```bash
+npx akari-docs init my-docs
+```
+
+## Quick Start File Map
 
 - Vite plugin setup: `vite.config.ts`
 - Global style import and app mount: `src/main.ts`
@@ -28,19 +50,7 @@ your-project/
       api-reference.md
 ```
 
-## 1. Install
-
-```bash
-npm install akari-docs
-```
-
-If your project does not already include the peer dependencies:
-
-```bash
-npm install vue vue-router
-```
-
-## 2. Configure Vite (`vite.config.ts`)
+## 1) Configure Vite (`vite.config.ts`)
 
 ```ts
 import { defineConfig } from "vite";
@@ -52,7 +62,7 @@ export default defineConfig({
 });
 ```
 
-## 3. Import Layout and Styles (`src/main.ts`)
+## 2) Import package styles (`src/main.ts`)
 
 ```ts
 import { createApp } from "vue";
@@ -62,48 +72,70 @@ import "akari-docs/style.css";
 createApp(App).mount("#app");
 ```
 
-## 4. Basic Usage (`src/App.vue`)
+## 3) Render markdown pages with `Layout` (`src/App.vue`)
 
 ```vue
 <script setup lang="ts">
-import { Layout } from "akari-docs";
+import { computed } from "vue";
+import { useRouter } from "vue-router";
+import { Layout, createDocsRuntime } from "akari-docs";
+import { markdownIndex } from "virtual:akari-md-index";
 
-const tocItems = [
-  { label: "Overview", href: "#overview", level: 2 },
-  { label: "Usage", href: "#usage", level: 2 },
-];
+interface MarkdownHeading {
+  readonly level: number;
+  readonly text: string;
+  readonly id: string;
+}
 
-const navigatorItems = [
-  {
-    label: "Introduction",
-    href: "/introduction",
-    slug: "introduction",
-    isActive: true,
-  },
-  { label: "API Reference", href: "/api-reference", slug: "api-reference" },
-];
+interface LoadedMarkdownModule {
+  readonly default: unknown;
+  readonly metadata: Record<string, string | number | boolean>;
+  readonly headings: readonly MarkdownHeading[];
+}
+
+const markdownModules = import.meta.glob<LoadedMarkdownModule>(
+  "./content/*.md",
+);
+const router = useRouter();
+
+const docs = createDocsRuntime({
+  markdownModules,
+  pageIndex: markdownIndex,
+  locale: "en",
+  initialSlug: "introduction",
+});
+
+const currentModule = computed(() => docs.currentModule.value);
+const currentSlug = computed(() => docs.currentSlug.value);
+
+function handlePageChange(slug: string): void {
+  void docs.onPageChange(slug, async (nextSlug, locale) => {
+    await router.push({ path: `/${locale}/${nextSlug}` }).catch(async () => {
+      await docs.loadPage(nextSlug, locale);
+    });
+  });
+}
 </script>
 
 <template>
   <Layout
-    :toc-items="tocItems"
-    :navigator-items="navigatorItems"
-    :current-slug="'introduction'"
+    :frontmatter="currentModule?.metadata"
+    :toc-items="docs.tocItems"
+    :navigator-items="docs.navigatorItems"
+    :current-slug="currentSlug"
+    :on-page-change="handlePageChange"
   >
-    <article>
-      <h2 id="overview">Overview</h2>
-      <h2 id="usage">Usage</h2>
-    </article>
+    <component :is="currentModule?.default" v-if="currentModule" />
   </Layout>
 </template>
 ```
 
-## 5. Frontmatter + TOC Behavior
+## Frontmatter + TOC Behavior
 
 - Frontmatter is optional and has safe fallback values in layout rendering.
 - TOC is intended for heading levels **2** and **3**.
 - Active highlighting updates on scroll and content changes.
 
-## 6. Deploy to Vercel
+## Next Step
 
-Follow [Deploy on Vercel](/deployment-vercel) for production-ready setup, including SPA route rewrites.
+Continue with [User Guide](/user-guide) for localization and security defaults.

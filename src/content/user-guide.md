@@ -1,13 +1,80 @@
 ---
 title: User Guide
 author: Akari Team
-description: How users can read and navigate documentation in your system.
+description: Localization, security defaults, and markdown content behavior.
 order: 4
 ---
 
 # User Guide
 
-## What Users See in the Docs System
+## Localization (Markdown Content i18n)
+
+Akari-Docs supports lightweight, file-based localization for markdown content.
+
+### Route Prefix
+
+- English: `/en/<slug>`
+- Thai: `/th/<slug>`
+
+### Localized Markdown Files
+
+Use one base file and optional locale variants:
+
+- Base fallback: `src/content/getting-started.md`
+- Thai override: `src/content/getting-started.th.md`
+- English override (optional): `src/content/getting-started.en.md`
+
+Runtime behavior:
+
+1. Try locale-specific file first (`<slug>.<locale>.md`)
+2. Fall back to `<slug>.md` if locale file does not exist
+
+### Optional Localized Frontmatter Fields
+
+For translatable page metadata, you can add locale-specific frontmatter keys:
+
+```yaml
+---
+title: Getting Started
+title_th: เริ่มต้นใช้งาน
+description: Install and configure Akari-Docs
+description_th: ติดตั้งและตั้งค่า Akari-Docs
+---
+```
+
+## Security Defaults
+
+Akari-Docs applies defensive sanitization by default in markdown rendering paths.
+
+- Markdown-rendered HTML is sanitized with DOMPurify before being injected into `innerHTML`.
+- This helps reduce XSS risk when content is not fully trusted.
+- Plugin option `sanitizeHtml` is enabled by default.
+
+Example:
+
+```ts
+import { akariMarkdownPlugin } from "akari-docs";
+
+export default {
+  plugins: [
+    akariMarkdownPlugin({
+      sanitizeHtml: true,
+    }),
+  ],
+};
+```
+
+## How Markdown Files Are Exposed
+
+With `akariMarkdownPlugin` enabled:
+
+- `*.md` files can be imported as Vue components (`default`).
+- Each markdown module also exports:
+  - `metadata` (frontmatter key/value pairs)
+  - `headings` (heading level/text/id list)
+- `virtual:akari-md-index` exports a typed `markdownIndex` for navigation.
+
+## Reading Flow in UI
 
 Your docs system has three practical areas:
 
@@ -16,25 +83,6 @@ Your docs system has three practical areas:
 - Right panel: page navigation between docs.
 
 This layout helps users stay oriented in long pages and switch between topics quickly.
-
-## Reading Flow for End Users
-
-1. Open a page from the right-side navigator.
-2. Use the left-side TOC to jump to sections.
-3. Scroll naturally while the active heading updates in the TOC.
-4. Use browser back/forward to move between opened pages.
-
-## URL Behavior
-
-- Page URLs use slugs such as `/introduction` or `/api-reference`.
-- Section links use hash anchors such as `#getting-started`.
-- Deep links can be shared directly to a page and heading.
-
-## Accessibility and Usability Notes
-
-- Headings are structured for readable navigation.
-- TOC levels are focused on H2 and H3 for clarity.
-- Frontmatter is optional; safe fallback text is shown when missing.
 
 ## Recommended Content Writing Style
 
@@ -54,4 +102,4 @@ Before publishing docs updates:
 
 ## Next Step
 
-Continue with [Deploy on Vercel](/deployment-vercel) for production deployment.
+Continue with [Deploy on Vercel](/deployment-vercel) for production deployment and publish notes.

@@ -1,17 +1,11 @@
 ---
 title: Deploy on Vercel
 author: Akari Team
-description: Production deployment checklist for Vercel.
+description: Build, publish, and deployment notes for production readiness.
 order: 5
 ---
 
 # Deploy on Vercel
-
-## Prerequisites
-
-- Source code is pushed to your Git repository.
-- Build succeeds locally (`npm run build` or `bun run build`).
-- Your project uses `dist` as the static output folder.
 
 ## Vercel Project Settings
 
@@ -24,32 +18,31 @@ When importing the repository into Vercel, use:
 
 ## SPA Routing Requirement
 
-This docs system uses history-based routing for page slugs (for example `/introduction`).
+This docs system uses history-based routing for page slugs.
 
 To avoid 404 on hard-refresh for nested routes, add a rewrite to `index.html`.
 A ready `vercel.json` is included in the project root.
 
-## Deployment Steps
-
-1. Import repository in Vercel dashboard.
-2. Confirm build/output settings.
-3. Trigger first deployment.
-4. Open production URL and test routes.
-
-## Post-Deploy Checks
-
-Verify these cases:
-
-1. Open `/introduction` directly in a new tab.
-2. Refresh on `/api-reference` (must not 404).
-3. Open a deep hash link like `/getting-started#basic-usage`.
-4. Confirm CSS and icons load correctly.
-
-## Optional CLI Deployment
+## Development Commands
 
 ```bash
-npx vercel
-npx vercel --prod
+npm run dev
+npm run test
+npm run build
+npm run preview
+```
+
+## Build and Publish Notes
+
+- Build output is published from `dist` only.
+- `dist/style.css` is always created for stable CSS export.
+- `prepublishOnly` runs test + build before publish.
+
+Example publish flow:
+
+```bash
+npm adduser
+npm publish --access public
 ```
 
 ## Troubleshooting
@@ -69,6 +62,14 @@ npx vercel --prod
 - Match local Node and package manager versions.
 - Re-check build command and lockfile consistency.
 
+## Support
+
+If Akari-Docs helps your team ship docs faster, you can support ongoing maintenance:
+
+- BuyMeACoffee: https://buymeacoffee.com/oatmealxxii
+- Patreon: https://patreon.com/OatMeal22015
+- Ko-Fi: https://ko-fi.com/oatmealxxii
+
 ## Next Step
 
-After deploy, return to [API Reference](/api-reference) to validate public exports in production.
+Return to [API Reference](/api-reference) to validate public exports in production.

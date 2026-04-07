@@ -1,47 +1,46 @@
 ---
 title: Introduction
 author: Akari Team
-description: What Akari-Docs is and why it stays zero-bloat.
+description: Product overview, value proposition, and who Akari-Docs is for.
 order: 1
 ---
 
-# Akari-Docs Introduction
+# Akari-Docs
 
-## What Is Akari-Docs?
+Build Vue documentation sites that feel production-ready on day one, without building a docs framework from scratch.
 
-Akari-Docs is a **Vue + Vite documentation package** designed for teams that want a clean docs experience without carrying a heavy framework runtime they do not need.
+Akari-Docs is a zero-bloat Vue + Vite package for markdown-driven docs with a typed content pipeline, stable exports, and a practical layout you can ship.
 
-The package provides:
+**One-line comparison:** If a typical docs setup gives you raw markdown rendering and leaves the rest to custom glue code, Akari-Docs gives you typed content, navigation indexing, and a production-ready layout out of the box.
+
+## Why Teams Use Akari-Docs
+
+Most markdown docs setups fail in the same places:
+
+- You spend time wiring markdown parsing, frontmatter, and heading extraction before writing real content.
+- TOC behavior is inconsistent (wrong active state, flicker, broken deep links).
+- Navigation metadata is duplicated across files and hand-maintained.
+- Packaging gets messy (`style.css` path changes, plugin/runtime split, fragile exports).
+
+Akari-Docs fixes those pain points with a focused API:
+
+- Parse markdown into typed module exports (`default`, `metadata`, `headings`).
+- Generate a typed docs index through `virtual:akari-md-index`.
+- Use a production-ready `Layout` with TOC highlighting and page navigation support.
+- Rely on stable package exports for runtime, plugin-only usage, and stylesheet import.
+
+## What You Get
 
 - A markdown plugin for extracting metadata and headings.
 - A production-friendly documentation layout.
 - Dynamic TOC and navigator behavior with active highlighting.
 
-## Why Zero-Bloat?
+## When Not to Use Akari-Docs
 
-Akari-Docs is built with a strict rule: **ship only what is required for docs rendering and navigation**.
+Akari-Docs is intentionally focused. You may not need it if:
 
-Core principles:
+- You are building a docs site outside the Vue + Vite ecosystem.
+- You need a fully managed docs platform with hosted search, analytics, and CMS workflows included.
+- Your docs are static enough that a plain markdown renderer with no TOC/nav logic is already sufficient.
 
-- Keep third-party runtime requirements explicit.
-- Avoid shipping demo-only code in the package output.
-- Keep TOC tracking efficient for long documents.
-- Generate docs content from markdown source directly.
-
-## Architecture Snapshot
-
-```text
-Markdown Content -> akariMarkdownPlugin -> heading/frontmatter index -> Layout (TOC + Navigator)
-```
-
-## Who Should Use It?
-
-- Teams shipping component libraries and needing internal/external docs.
-- Projects already using Vue + Vite.
-- Maintainers who want strict control over package footprint.
-
-## Next Step
-
-Continue with [Getting Started](/getting-started) to install and wire the package into your Vite setup.
-
-Then read [User Guide](/user-guide) for end-user navigation behavior inside your docs system.
+If these do not apply, Akari-Docs is a strong fit when you want speed, control, and predictable outputs.

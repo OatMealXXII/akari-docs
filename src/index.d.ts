@@ -80,6 +80,89 @@ export interface LayoutProps {
   readonly footer?: FooterData;
 }
 
+export interface LocalLayoutNavItem {
+  readonly label: string;
+  readonly href: string;
+  readonly slug?: string;
+  readonly isActive?: boolean;
+}
+
+export interface LocalLayoutTocItem {
+  readonly label: string;
+  readonly href: string;
+  readonly level?: number;
+}
+
+export interface LocalLayoutProps {
+  readonly frontmatter?: Readonly<Record<string, unknown>>;
+  readonly onPageChange?: (slug: string) => void;
+  readonly tocItems?: readonly LocalLayoutTocItem[];
+  readonly navigatorItems?: readonly LocalLayoutNavItem[];
+  readonly currentSlug?: string;
+}
+
+export interface DocsApiHeading {
+  readonly level: number;
+  readonly text: string;
+  readonly id: string;
+}
+
+export interface DocsApiPageIndexItem {
+  readonly slug: string;
+  readonly href: string;
+  readonly label: string;
+  readonly headings?: readonly DocsApiHeading[];
+  readonly metadata?: Readonly<Record<string, FrontmatterValue>>;
+}
+
+export interface DocsApiLoadedModule {
+  readonly default: unknown;
+  readonly metadata: Readonly<Record<string, FrontmatterValue>>;
+  readonly headings: readonly DocsApiHeading[];
+}
+
+export interface CreateDocsApiOptions {
+  readonly markdownModules: Record<string, () => Promise<DocsApiLoadedModule>>;
+  readonly pageIndex: readonly DocsApiPageIndexItem[];
+  readonly locale?: string;
+}
+
+export interface CreateDocsRuntimeOptions extends CreateDocsApiOptions {
+  readonly initialSlug?: string;
+}
+
+export interface DocsApi {
+  readonly getFallbackSlug: () => string;
+  readonly resolveSlug: (slug: string) => string;
+  readonly buildNavigatorItems: (
+    currentSlug: string,
+    locale?: string,
+  ) => readonly NavItem[];
+  readonly buildTocItems: (
+    headings?: readonly DocsApiHeading[],
+  ) => readonly TocItem[];
+  readonly loadPage: (
+    slug: string,
+    locale?: string,
+  ) => Promise<{ slug: string; module: DocsApiLoadedModule } | null>;
+}
+
+export interface DocsRuntime {
+  readonly api: DocsApi;
+  readonly currentSlug: import("vue").Ref<string>;
+  readonly currentModule: import("vue").Ref<DocsApiLoadedModule | null>;
+  readonly isLoading: import("vue").Ref<boolean>;
+  readonly locale: import("vue").Ref<string>;
+  readonly tocItems: import("vue").ComputedRef<readonly TocItem[]>;
+  readonly navigatorItems: import("vue").ComputedRef<readonly NavItem[]>;
+  readonly setLocale: (locale: string) => void;
+  readonly loadPage: (slug?: string, locale?: string) => Promise<void>;
+  readonly onPageChange: (
+    slug: string,
+    navigate?: (slug: string, locale: string) => Promise<unknown> | unknown,
+  ) => Promise<void>;
+}
+
 export declare function akariMarkdownPlugin(
   options?: AkariMarkdownPluginOptions,
 ): Plugin;
@@ -89,3 +172,14 @@ export declare const Layout: DefineComponent<
   Record<string, never>,
   unknown
 >;
+
+export declare const LocalLayout: DefineComponent<
+  LocalLayoutProps,
+  Record<string, never>,
+  unknown
+>;
+
+export declare function createDocsApi(options: CreateDocsApiOptions): DocsApi;
+export declare function createDocsRuntime(
+  options: CreateDocsRuntimeOptions,
+): DocsRuntime;
