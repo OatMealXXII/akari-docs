@@ -7,6 +7,27 @@ order: 2
 
 # Getting Started
 
+## File Map
+
+- Vite plugin setup: `vite.config.ts`
+- Global style import and app mount: `src/main.ts`
+- Docs page rendering with `Layout`: `src/App.vue`
+- Markdown content pages: `src/content/*.md`
+
+## Recommended Project Structure
+
+```text
+your-project/
+  vite.config.ts
+  src/
+    main.ts
+    App.vue
+    content/
+      introduction.md
+      getting-started.md
+      api-reference.md
+```
+
 ## 1. Install
 
 ```bash
@@ -19,7 +40,7 @@ If your project does not already include the peer dependencies:
 npm install vue vue-router
 ```
 
-## 2. Configure Vite
+## 2. Configure Vite (`vite.config.ts`)
 
 ```ts
 import { defineConfig } from "vite";
@@ -31,7 +52,7 @@ export default defineConfig({
 });
 ```
 
-## 3. Import Layout and Styles
+## 3. Import Layout and Styles (`src/main.ts`)
 
 ```ts
 import { createApp } from "vue";
@@ -41,7 +62,7 @@ import "akari-docs/style.css";
 createApp(App).mount("#app");
 ```
 
-## 4. Basic Usage
+## 4. Basic Usage (`src/App.vue`)
 
 ```vue
 <script setup lang="ts">

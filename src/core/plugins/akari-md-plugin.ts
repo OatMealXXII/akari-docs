@@ -37,6 +37,7 @@ export interface AkariMarkdownHook {
 
 export interface AkariMarkdownPluginOptions {
   readonly hooks?: readonly AkariMarkdownHook[];
+  readonly sanitizeHtml?: boolean;
 }
 
 const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
@@ -81,18 +82,35 @@ export function akariMarkdownPlugin(
         options.hooks ?? [],
       );
       const rendered = renderMarkdownDocument(transformed, options.hooks ?? []);
+      const shouldSanitize = options.sanitizeHtml !== false;
+      const rawHtmlLiteral = JSON.stringify(rendered.html);
 
-      return [
-        'import { defineComponent, h } from "vue";',
+      const codeLines = ['import { defineComponent, h } from "vue";'];
+
+      if (shouldSanitize) {
+        codeLines.push('import DOMPurify from "dompurify";');
+      }
+
+      codeLines.push(`const renderedHtml = ${rawHtmlLiteral};`);
+
+      if (shouldSanitize) {
+        codeLines.push(
+          "const safeHtml = DOMPurify.sanitize(renderedHtml, { USE_PROFILES: { html: true } });",
+        );
+      }
+
+      codeLines.push(
         `export const metadata = ${JSON.stringify(rendered.metadata)};`,
         `export const headings = ${JSON.stringify(rendered.headings)};`,
         "export default defineComponent({",
         '  name: "AkariMarkdownDocument",',
         "  render() {",
-        `    return h("article", { class: "akari-prose", innerHTML: ${JSON.stringify(rendered.html)} });`,
+        `    return h("article", { class: "akari-prose", innerHTML: ${shouldSanitize ? "safeHtml" : "renderedHtml"} });`,
         "  },",
         "});",
-      ].join("\n");
+      );
+
+      return codeLines.join("\n");
     },
   };
 }

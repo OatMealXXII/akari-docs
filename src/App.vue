@@ -5,6 +5,7 @@ import Layout from "./theme/Layout.vue";
 import type { FooterData, FrontmatterValue } from "./theme/Layout.vue";
 import { markdownIndex } from "virtual:akari-md-index";
 import { siteFooter } from "./config/site";
+import { useLiteI18n, type LocaleCode } from "./i18n/lite";
 
 interface MarkdownHeading {
   readonly level: number;
@@ -34,12 +35,16 @@ interface PageIndexItem {
 }
 
 const markdownModules = import.meta.glob<LoadedMarkdownModule>("./content/*.md");
+const LOCALIZED_SLUG_SUFFIX = /\.(en|th)$/;
 
 const currentSlug = ref<string>("");
 const currentModule = ref<LoadedMarkdownModule | null>(null);
 const isLoading = ref(false);
+const { ensureLocaleLoaded, getOptionalTranslatedFrontmatter, isLocaleCode, locale, setLocale, t } = useLiteI18n();
 
-const pageIndex = computed<readonly PageIndexItem[]>(() => markdownIndex as readonly PageIndexItem[]);
+const pageIndex = computed<readonly PageIndexItem[]>(() => {
+  return (markdownIndex as readonly PageIndexItem[]).filter((item) => !LOCALIZED_SLUG_SUFFIX.test(item.slug));
+});
 
 const pageIndexBySlug = computed<Record<string, PageIndexItem>>(() => {
   return Object.fromEntries(pageIndex.value.map((item) => [item.slug, item]));
@@ -47,16 +52,15 @@ const pageIndexBySlug = computed<Record<string, PageIndexItem>>(() => {
 
 const navigatorItems = computed(() =>
   pageIndex.value.map((item) => ({
-    label: item.label,
+    label: getOptionalTranslatedFrontmatter(item.metadata, "title") ?? item.label,
     slug: item.slug,
-    href: item.href,
+    href: `/${locale.value}/${item.slug}`,
     isActive: item.slug === currentSlug.value,
   })),
 );
 
 const tocItems = computed(() => {
-  const current = pageIndexBySlug.value[currentSlug.value];
-  const headings = current?.headings ?? [];
+  const headings = currentModule.value?.headings ?? [];
   return headings
     .filter((heading) => heading.level >= 2 && heading.level <= 3)
     .map((heading) => ({
@@ -67,7 +71,13 @@ const tocItems = computed(() => {
 });
 
 const frontmatter = computed<FrontmatterData>(() => {
-  return currentModule.value?.metadata ?? pageIndexBySlug.value[currentSlug.value]?.metadata ?? {};
+  const metadata = currentModule.value?.metadata ?? pageIndexBySlug.value[currentSlug.value]?.metadata ?? {};
+
+  return {
+    ...metadata,
+    title: getOptionalTranslatedFrontmatter(metadata, "title") ?? metadata.title,
+    description: getOptionalTranslatedFrontmatter(metadata, "description") ?? metadata.description,
+  };
 });
 
 const footerData = computed<FooterData>(() => {
@@ -86,8 +96,9 @@ async function loadPage(slug: string): Promise<void> {
     return;
   }
 
-  const modulePath = `./content/${targetSlug}.md`;
-  const loader = markdownModules[modulePath];
+  const localizedPath = `./content/${targetSlug}.${locale.value}.md`;
+  const fallbackPath = `./content/${targetSlug}.md`;
+  const loader = markdownModules[localizedPath] ?? markdownModules[fallbackPath];
   if (!loader) {
     return;
   }
@@ -113,28 +124,71 @@ function handlePageChange(slug: string): void {
     return;
   }
 
-  void router.push({ path: `/${slug}` }).catch(() => {
+  void router.push({ path: `/${locale.value}/${slug}` }).catch(() => {
     void loadPage(slug);
   });
 }
 
-onMounted(() => {
-  const path = route.path.replace(/^\//, "").split("/")[0] ?? "";
-  const fallback = pageIndexBySlug.value.introduction
+function normalizeRoute(path: string): { localeFromPath: LocaleCode | null; slug: string } {
+  const [segmentA = "", segmentB = ""] = path.replace(/^\//, "").split("/");
+  if (isLocaleCode(segmentA)) {
+    return { localeFromPath: segmentA, slug: segmentB };
+  }
+
+  return { localeFromPath: null, slug: segmentA };
+}
+
+function getFallbackSlug(): string {
+  return pageIndexBySlug.value.introduction
     ? "introduction"
     : pageIndex.value[0]?.slug ?? "";
-  void loadPage(path || fallback);
+}
+
+async function syncLocaleRoute(path: string): Promise<void> {
+  await ensureLocaleLoaded();
+
+  const { localeFromPath, slug } = normalizeRoute(path);
+  if (localeFromPath && localeFromPath !== locale.value) {
+    await setLocale(localeFromPath);
+  }
+
+  const fallbackSlug = getFallbackSlug();
+  const targetSlug = slug || fallbackSlug;
+  if (!targetSlug) {
+    return;
+  }
+
+  if (!localeFromPath) {
+    await router.replace({ path: `/${locale.value}/${targetSlug}` }).catch(() => undefined);
+    return;
+  }
+
+  await loadPage(targetSlug);
+}
+
+onMounted(() => {
+  void syncLocaleRoute(route.path);
 });
 
 watch(
   () => route.path,
   (newPath) => {
-    const slug = newPath.replace(/^\//, "").split("/")[0] ?? "";
-    const fallback = pageIndexBySlug.value.introduction
-      ? "introduction"
-      : pageIndex.value[0]?.slug ?? "";
-    void loadPage(slug || fallback);
+    void syncLocaleRoute(newPath);
   }
+);
+
+watch(
+  () => locale.value,
+  (nextLocale) => {
+    if (!currentSlug.value) {
+      return;
+    }
+
+    const expectedPath = `/${nextLocale}/${currentSlug.value}`;
+    if (route.path !== expectedPath) {
+      void router.replace({ path: expectedPath });
+    }
+  },
 );
 
 </script>
@@ -150,7 +204,7 @@ watch(
 
       <div v-else key="loading" class="flex min-h-[40vh] items-center justify-center bg-transparent text-neutral-100">
         <div class="text-center p-6">
-          <p class="text-lg">Loading...</p>
+          <p class="text-lg">{{ t("loading") }}</p>
         </div>
       </div>
     </transition>

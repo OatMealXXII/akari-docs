@@ -14,9 +14,15 @@ const props = withDefaults(defineProps<RenderedMarkdownProps>(), {
     sanitize: true,
 });
 
+const sanitizeHtml = (html: string): string => {
+    return DOMPurify.sanitize(html, {
+        USE_PROFILES: { html: true },
+    });
+};
+
 const renderedHtml = computed<string>(() => {
     const sourceHtml = props.transformHtml ? props.transformHtml(props.html) : props.html;
-    return props.sanitize ? DOMPurify.sanitize(sourceHtml) : sourceHtml;
+    return props.sanitize ? sanitizeHtml(sourceHtml) : sourceHtml;
 });
 </script>
 

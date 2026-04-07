@@ -24,7 +24,6 @@ export default defineConfig(({ mode }) => {
             "vue",
             "vue-router",
             "marked",
-            "lucide-vue-next",
             "node:fs",
             "node:path",
             "fs",

@@ -1,23 +1,79 @@
 # Akari-Docs
 
-Akari-Docs is a zero-bloat Vue + Vite documentation package for markdown-driven sites.
+Build Vue documentation sites that feel production-ready on day one, without building a docs framework from scratch.
 
-> Notice: I use AI to vibe code in summer.
+Akari-Docs is a zero-bloat Vue + Vite package for markdown-driven docs with a typed content pipeline, stable exports, and a practical layout you can ship.
 
-It provides:
+**One-line comparison:** If a typical docs setup gives you raw markdown rendering and leaves the rest to custom glue code, Akari-Docs gives you typed content, navigation indexing, and a production-ready layout out of the box.
 
-- A Vite markdown plugin (`akariMarkdownPlugin`) that parses frontmatter and headings.
-- Typed markdown module output (`default`, `metadata`, `headings`).
-- A production-ready `Layout` component with:
-  - TOC highlighting
-  - page navigator support
-  - safe frontmatter fallbacks
-- Stable package exports for runtime, plugin-only usage, and CSS.
+## Why Teams Use Akari-Docs
+
+Most markdown docs setups fail in the same places:
+
+- You spend time wiring markdown parsing, frontmatter, and heading extraction before writing real content.
+- TOC behavior is inconsistent (wrong active state, flicker, broken deep links).
+- Navigation metadata is duplicated across files and hand-maintained.
+- Packaging gets messy (`style.css` path changes, plugin/runtime split, fragile exports).
+
+Akari-Docs fixes those pain points with a focused API:
+
+- Parse markdown into typed module exports (`default`, `metadata`, `headings`).
+- Generate a typed docs index through `virtual:akari-md-index`.
+- Use a production-ready `Layout` with TOC highlighting and page navigation support.
+- Rely on stable package exports for runtime, plugin-only usage, and stylesheet import.
+
+## What You Get
+
+- `akariMarkdownPlugin`: a Vite plugin for markdown transformation and indexing.
+- Typed markdown output: predictable module shape across your docs pages.
+- `Layout`: a drop-in docs layout with robust heading tracking (optimized for `h2` and `h3`).
+- Stable exports:
+  - `akari-docs`
+  - `akari-docs/plugin`
+  - `akari-docs/style.css`
+
+## Social Proof (Placeholders)
+
+Use this section for npm and GitHub conversion. Replace placeholders with your real numbers.
+
+### Benchmarks
+
+| Metric                                   | Akari-Docs   | Typical Custom Setup |
+| ---------------------------------------- | ------------ | -------------------- |
+| Time to first publishable docs page      | `<XX min>`   | `<YY min>`           |
+| Markdown integration code to maintain    | `<AA lines>` | `<BB lines>`         |
+| TOC/navigation bugs found in first month | `<N>`        | `<M>`                |
+
+### Adopters
+
+- Trusted by: `<Team A>`, `<Team B>`, `<Open-source Project C>`
+- Production use cases: `<Internal docs>`, `<SDK docs>`, `<Product docs portal>`
+
+### GitHub and npm CTA
+
+- If this saves your team time, please star the repo to help more teams discover it.
+- Try it in one page first: install, import `akari-docs/style.css`, and render one markdown file with `Layout`.
+
+## When Not to Use Akari-Docs
+
+Akari-Docs is intentionally focused. You may not need it if:
+
+- You are building a docs site outside the Vue + Vite ecosystem.
+- You need a fully managed docs platform with hosted search, analytics, and CMS workflows included.
+- Your docs are static enough that a plain markdown renderer with no TOC/nav logic is already sufficient.
+
+If these do not apply, Akari-Docs is a strong fit when you want speed, control, and predictable outputs.
 
 ## Table of Contents
 
+- [Social Proof (Placeholders)](#social-proof-placeholders)
+- [When Not to Use Akari-Docs](#when-not-to-use-akari-docs)
 - [Install](#install)
 - [Quick Start](#quick-start)
+- [Quick Start File Map](#quick-start-file-map)
+- [Recommended Project Structure](#recommended-project-structure)
+- [Localization (Markdown Content i18n)](#localization-markdown-content-i18n)
+- [Security Defaults](#security-defaults)
 - [How Markdown Files Are Exposed](#how-markdown-files-are-exposed)
 - [Package Exports](#package-exports)
 - [Plugin Hooks](#plugin-hooks)
@@ -41,7 +97,30 @@ npm install vue vue-router
 
 ## Quick Start
 
-### 1) Configure Vite
+Follow this sequence to wire Akari-Docs into a standard Vue + Vite project.
+
+## Quick Start File Map
+
+- Vite plugin setup: `vite.config.ts`
+- Global style import and app mount: `src/main.ts`
+- Docs page rendering with `Layout`: `src/App.vue`
+- Markdown content files: `src/content/*.md`
+
+## Recommended Project Structure
+
+```text
+your-project/
+  vite.config.ts
+  src/
+    main.ts
+    App.vue
+    content/
+      introduction.md
+      getting-started.md
+      api-reference.md
+```
+
+### 1) Configure Vite (`vite.config.ts`)
 
 ```ts
 import { defineConfig } from "vite";
@@ -53,7 +132,7 @@ export default defineConfig({
 });
 ```
 
-### 2) Import package styles
+### 2) Import package styles (`src/main.ts`)
 
 ```ts
 import { createApp } from "vue";
@@ -63,7 +142,7 @@ import "akari-docs/style.css";
 createApp(App).mount("#app");
 ```
 
-### 3) Render markdown pages with `Layout`
+### 3) Render markdown pages with `Layout` (`src/App.vue`)
 
 ```vue
 <script setup lang="ts">
@@ -125,7 +204,7 @@ async function loadPage(slug: string) {
 
 function handlePageChange(slug: string) {
   if (!slug || slug === currentSlug.value) return;
-  void router.push({ path: `/${slug}` }).catch(() => {
+  void router.push({ path: `/en/${slug}` }).catch(() => {
     void loadPage(slug);
   });
 }
@@ -143,6 +222,81 @@ function handlePageChange(slug: string) {
   </Layout>
 </template>
 ```
+
+## Localization (Markdown Content i18n)
+
+Akari-Docs supports lightweight, file-based localization for markdown content.
+
+### Route Prefix
+
+- English: `/en/<slug>`
+- Thai: `/th/<slug>`
+
+Examples:
+
+- `/en/introduction`
+- `/th/introduction`
+
+### Migration Note
+
+If you previously used unprefixed routes like `/introduction`, migrate links to the new locale-prefixed format, for example `/en/introduction` (or `/th/introduction`).
+
+### Localized Markdown Files
+
+Use one base file and optional locale variants:
+
+- Base fallback: `src/content/getting-started.md`
+- Thai override: `src/content/getting-started.th.md`
+- English override (optional): `src/content/getting-started.en.md`
+
+Runtime behavior:
+
+1. Try locale-specific file first (`<slug>.<locale>.md`)
+2. Fall back to `<slug>.md` if locale file does not exist
+
+### Language Switcher
+
+- The docs UI includes a language dropdown in the header.
+- Changing language updates both route prefix and loaded markdown content.
+
+### Optional Localized Frontmatter Fields
+
+For translatable page metadata, you can add locale-specific frontmatter keys:
+
+```yaml
+---
+title: Getting Started
+title_th: เริ่มต้นใช้งาน
+description: Install and configure Akari-Docs
+description_th: ติดตั้งและตั้งค่า Akari-Docs
+---
+```
+
+If locale-specific keys are missing, Akari-Docs falls back to `title` and `description`.
+
+## Security Defaults
+
+Akari-Docs now applies defensive sanitization by default in markdown rendering paths.
+
+- Markdown-rendered HTML is sanitized with DOMPurify before being injected into `innerHTML`.
+- This helps reduce XSS risk when content is not fully trusted.
+- Plugin option `sanitizeHtml` is enabled by default.
+
+Example:
+
+```ts
+import { akariMarkdownPlugin } from "akari-docs";
+
+export default {
+  plugins: [
+    akariMarkdownPlugin({
+      sanitizeHtml: true,
+    }),
+  ],
+};
+```
+
+Set `sanitizeHtml: false` only if your content pipeline is fully trusted and already sanitized upstream.
 
 ## How Markdown Files Are Exposed
 
@@ -232,6 +386,6 @@ npm publish --access public
 
 ## Support
 
-If you find **Akari-Docs** helpful and want to support my work, you can buy me a coffee\! ☕✨
+If Akari-Docs helps your team ship docs faster, you can support ongoing maintenance:
 
 [![BuyMeACoffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/oatmealxxii) [![Patreon](https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white)](https://patreon.com/OatMeal22015) [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/oatmealxxii)

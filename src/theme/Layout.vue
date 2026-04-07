@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onBeforeUnmount, nextTick } from "vue";
-import type { Component } from "vue";
-import { BookText, ExternalLink, Github, Home, Link as LinkIcon } from "lucide-vue-next";
+import { computed, ref, watch, onBeforeUnmount, onMounted, nextTick } from "vue";
 import {
     DEFAULT_HEADING_SCROLL_OFFSET,
     buildTocHrefById,
@@ -10,6 +8,7 @@ import {
     resolveActiveHeadingByScroll,
     toActiveHref,
 } from "./toc-highlight";
+import { useLiteI18n, type LocaleCode } from "../i18n/lite";
 
 export type FrontmatterValue = string | number | boolean;
 
@@ -57,9 +56,25 @@ export interface LayoutProps {
 }
 
 const props = defineProps<LayoutProps>();
+const { locale, setLocale, t } = useLiteI18n();
+const localeOptions: ReadonlyArray<{ value: LocaleCode; label: string }> = [
+    { value: "en", label: "English" },
+    { value: "th", label: "ไทย" },
+];
+
+const handleLocaleChange = (event: Event) => {
+    const target = event.target as HTMLSelectElement | null;
+    const nextLocale = target?.value;
+    if (nextLocale === "en" || nextLocale === "th") {
+        void setLocale(nextLocale);
+    }
+};
 
 const leftSidebarOpen = ref(true);
 const rightSidebarOpen = ref(true);
+const mobileTocOpen = ref(false);
+const mobileNavOpen = ref(false);
+const MOBILE_BREAKPOINT = 768;
 
 // Manage delayed overflow switching to avoid flicker during transition
 const leftOverflowEnabled = ref(leftSidebarOpen.value);
@@ -112,6 +127,11 @@ watch(rightSidebarOpen, (open) => {
 onBeforeUnmount(() => {
     if (leftOverflowTimer) clearTimeout(leftOverflowTimer);
     if (rightOverflowTimer) clearTimeout(rightOverflowTimer);
+    if (supportsDom) {
+        window.removeEventListener("resize", handleViewportResize);
+        window.removeEventListener("keydown", handleMobileEscape);
+        document.body.style.overflow = "";
+    }
     cleanupHeadingTracking();
 });
 
@@ -129,6 +149,46 @@ let trackedLayoutHeight = 0;
 let headingOffsetsDirty = true;
 const supportsDom = typeof window !== "undefined" && typeof document !== "undefined";
 const HEADING_SCROLL_OFFSET = DEFAULT_HEADING_SCROLL_OFFSET;
+
+const closeMobilePanels = () => {
+    mobileTocOpen.value = false;
+    mobileNavOpen.value = false;
+};
+
+const openMobileToc = () => {
+    mobileNavOpen.value = false;
+    mobileTocOpen.value = true;
+};
+
+const openMobileNav = () => {
+    mobileTocOpen.value = false;
+    mobileNavOpen.value = true;
+};
+
+const handleMobileEscape = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+        closeMobilePanels();
+    }
+};
+
+const handleViewportResize = () => {
+    if (!supportsDom) return;
+    if (window.innerWidth >= MOBILE_BREAKPOINT) {
+        closeMobilePanels();
+    }
+};
+
+onMounted(() => {
+    if (!supportsDom) return;
+    handleViewportResize();
+    window.addEventListener("resize", handleViewportResize);
+    window.addEventListener("keydown", handleMobileEscape);
+});
+
+watch([mobileTocOpen, mobileNavOpen], ([tocOpen, navOpen]) => {
+    if (!supportsDom) return;
+    document.body.style.overflow = tocOpen || navOpen ? "hidden" : "";
+});
 
 const markHeadingOffsetsDirty = () => {
     headingOffsetsDirty = true;
@@ -452,18 +512,33 @@ const navigatorEntries = computed(() => props.navigatorItems ?? []);
 const footerData = computed(() => props.footer ?? null);
 const footerLinks = computed(() => footerData.value?.links ?? []);
 
-const footerIconMap: Record<FooterIconName, Component> = {
-    docs: BookText,
-    github: Github,
-    home: Home,
-    external: ExternalLink,
-    link: LinkIcon,
+const footerIconPathMap: Record<FooterIconName, readonly string[]> = {
+    docs: [
+        "M4 5a2 2 0 0 1 2-2h10v16H6a2 2 0 0 0-2 2z",
+        "M16 3h2a2 2 0 0 1 2 2v16h-2",
+    ],
+    github: [
+        "M9 19c-5 1.5-5-2.5-7-3m14 6v-3.9a3.4 3.4 0 0 0-.9-2.6c3-.3 6.2-1.5 6.2-6.7A5.2 5.2 0 0 0 20 5.2 4.8 4.8 0 0 0 19.9 2S18.8 1.7 16 3.6a13.3 13.3 0 0 0-7 0C6.2 1.7 5.1 2 5.1 2A4.8 4.8 0 0 0 5 5.2a5.2 5.2 0 0 0-1.3 3.6c0 5.2 3.2 6.4 6.2 6.7A3.4 3.4 0 0 0 9 18.1V22",
+    ],
+    home: [
+        "M3 10.5 12 3l9 7.5",
+        "M5 10v10h14V10",
+    ],
+    external: [
+        "M14 3h7v7",
+        "M10 14 21 3",
+        "M21 14v7H3V3h7",
+    ],
+    link: [
+        "M10 13a5 5 0 0 0 7.1 0l2.1-2.1a5 5 0 0 0-7.1-7.1L10 5",
+        "M14 11a5 5 0 0 0-7.1 0L4.8 13.1a5 5 0 1 0 7.1 7.1L14 19",
+    ],
 };
 
-const resolveFooterIcon = (iconName?: string): Component => {
-    if (!iconName) return LinkIcon;
+const resolveFooterIconPaths = (iconName?: string): readonly string[] => {
+    if (!iconName) return footerIconPathMap.link;
     const normalized = iconName.toLowerCase() as FooterIconName;
-    return footerIconMap[normalized] ?? LinkIcon;
+    return footerIconPathMap[normalized] ?? footerIconPathMap.link;
 };
 
 const defaultNavigatorSlug = computed(() => {
@@ -474,6 +549,7 @@ const handlePageChange = (slug: string) => {
     if (!slug || slug === props.currentSlug) return;
     if (!props.onPageChange) return;
 
+    closeMobilePanels();
     props.onPageChange(slug);
 };
 
@@ -483,7 +559,7 @@ const safeFrontmatter = computed<FrontmatterData>(() => {
 
 const safeAuthor = computed(() => {
     const author = safeFrontmatter.value.author;
-    return typeof author === "string" && author.trim().length > 0 ? author : "Unknown";
+    return typeof author === "string" && author.trim().length > 0 ? author : t("unknown");
 });
 
 const safeDescription = computed(() => {
@@ -506,6 +582,7 @@ const scrollToHeading = (href: string) => {
     const top = el.getBoundingClientRect().top + window.scrollY - HEADING_SCROLL_OFFSET;
     activeHeadingId.value = toActiveHref(id, trackedTocHrefById) ?? `#${id}`;
     window.scrollTo({ top, behavior: "smooth" });
+    closeMobilePanels();
     try {
         history.replaceState(null, "", `#${id}`);
     } catch (e) {
@@ -540,7 +617,7 @@ const tocLabelClass = (level?: number): string => {
                 <button type="button"
                     class="absolute top-1/2 z-30 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-700 bg-neutral-950 text-sm text-neutral-200 shadow-lg shadow-black/40 transition-all duration-300 ease-out hover:border-emerald-500 hover:text-emerald-300"
                     :class="leftSidebarOpen ? 'right-2' : 'left-1/2 -translate-x-1/2'"
-                    :aria-label="leftSidebarOpen ? 'Collapse left sidebar' : 'Expand left sidebar'"
+                    :aria-label="leftSidebarOpen ? t('collapseLeftSidebar') : t('expandLeftSidebar')"
                     :aria-pressed="leftSidebarOpen" @click="leftSidebarOpen = !leftSidebarOpen">
                     {{ leftSidebarOpen ? "←" : "→" }}
                 </button>
@@ -548,7 +625,7 @@ const tocLabelClass = (level?: number): string => {
                 <div class="h-full" :class="[leftSidebarPanelClass, leftSidebarOpen ? 'px-6 py-7' : 'p-0 invisible']">
                     <div>
                         <p class="text-[11px] uppercase tracking-[0.25em] text-neutral-500">Akari Docs</p>
-                        <h2 class="mt-3 text-lg font-semibold text-white">Table of Contents</h2>
+                        <h2 class="mt-3 text-lg font-semibold text-white">{{ t("tableOfContents") }}</h2>
                     </div>
 
                     <nav class="mt-6 space-y-1 text-sm text-neutral-300">
@@ -562,16 +639,30 @@ const tocLabelClass = (level?: number): string => {
                         </a>
 
                         <p v-if="tocEntries.length === 0" class="rounded-lg px-3 py-2 text-xs text-neutral-500">
-                            No headings found in this page.
+                            {{ t("noHeadingsFound") }}
                         </p>
                     </nav>
                 </div>
             </aside>
 
-            <main class="min-w-0 border-neutral-800/80 bg-neutral-950 px-5 py-8 md:border-x md:px-10 lg:px-14">
+            <main
+                class="min-w-0 border-neutral-800/80 bg-neutral-950 px-4 py-6 pb-24 md:border-x md:px-10 md:py-8 md:pb-8 lg:px-14">
                 <div class="mx-auto flex w-full max-w-3xl flex-col gap-8">
                     <header id="document-preview" class="space-y-3 border-b border-neutral-800/80 pb-6">
-                        <p class="text-[11px] uppercase tracking-[0.25em] text-neutral-500">Document Preview</p>
+                        <div class="flex items-start justify-between gap-4">
+                            <p class="text-[11px] uppercase tracking-[0.25em] text-neutral-500">{{ t("documentPreview")
+                                }}</p>
+                            <label class="inline-flex items-center gap-2 text-[11px] text-neutral-400"
+                                :aria-label="t('language')">
+                                <span>{{ t("language") }}</span>
+                                <select :value="locale" @change="handleLocaleChange"
+                                    class="rounded-md border border-neutral-700 bg-neutral-900/80 px-2 py-1 text-[11px] font-medium text-neutral-200 outline-none transition-colors hover:border-emerald-500/70 focus:border-emerald-500/70">
+                                    <option v-for="option in localeOptions" :key="option.value" :value="option.value">
+                                        {{ option.label }}
+                                    </option>
+                                </select>
+                            </label>
+                        </div>
                         <h1 class="text-3xl font-semibold leading-tight text-white md:text-4xl">
                             {{ safeTitle }}
                         </h1>
@@ -579,8 +670,8 @@ const tocLabelClass = (level?: number): string => {
 
                     <section id="metadata" class="rounded-2xl border border-neutral-800/80 bg-neutral-900/50 p-5">
                         <div class="grid gap-2 text-sm text-neutral-300 sm:grid-cols-2">
-                            <p><span class="text-neutral-500">Author:</span> {{ safeAuthor }}</p>
-                            <p><span class="text-neutral-500">Description:</span> {{ safeDescription }}</p>
+                            <p><span class="text-neutral-500">{{ t("author") }}:</span> {{ safeAuthor }}</p>
+                            <p><span class="text-neutral-500">{{ t("description") }}:</span> {{ safeDescription }}</p>
                         </div>
                     </section>
 
@@ -596,15 +687,15 @@ const tocLabelClass = (level?: number): string => {
                 <button type="button"
                     class="absolute top-1/2 z-30 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-700 bg-neutral-950 text-sm text-neutral-200 shadow-lg shadow-black/40 transition-all duration-300 ease-out hover:border-emerald-500 hover:text-emerald-300"
                     :class="rightSidebarOpen ? 'left-2' : 'left-1/2 -translate-x-1/2'"
-                    :aria-label="rightSidebarOpen ? 'Collapse right sidebar' : 'Expand right sidebar'"
+                    :aria-label="rightSidebarOpen ? t('collapseRightSidebar') : t('expandRightSidebar')"
                     :aria-pressed="rightSidebarOpen" @click="rightSidebarOpen = !rightSidebarOpen">
                     {{ rightSidebarOpen ? "→" : "←" }}
                 </button>
 
                 <div class="h-full" :class="[rightSidebarPanelClass, rightSidebarOpen ? 'px-6 py-7' : 'p-0 invisible']">
                     <div>
-                        <p class="text-[11px] uppercase tracking-[0.25em] text-neutral-500">Pages / Topics</p>
-                        <h2 class="mt-3 text-lg font-semibold text-white">Navigator</h2>
+                        <p class="text-[11px] uppercase tracking-[0.25em] text-neutral-500">{{ t("pagesTopics") }}</p>
+                        <h2 class="mt-3 text-lg font-semibold text-white">{{ t("navigator") }}</h2>
                     </div>
 
                     <nav class="mt-6 space-y-1 text-sm text-neutral-300">
@@ -616,12 +707,97 @@ const tocLabelClass = (level?: number): string => {
                         </button>
 
                         <p v-if="navigatorEntries.length === 0" class="rounded-lg px-3 py-2 text-xs text-neutral-500">
-                            No pages indexed.
+                            {{ t("noPagesIndexed") }}
                         </p>
                     </nav>
                 </div>
             </aside>
         </div>
+
+        <transition enter-active-class="transition-opacity duration-200" enter-from-class="opacity-0"
+            enter-to-class="opacity-100" leave-active-class="transition-opacity duration-200"
+            leave-from-class="opacity-100" leave-to-class="opacity-0">
+            <button v-if="mobileTocOpen || mobileNavOpen" type="button" :aria-label="t('closeMenu')"
+                class="fixed inset-0 z-40 bg-black/60 md:hidden" @click="closeMobilePanels" />
+        </transition>
+
+        <div
+            class="fixed inset-x-0 bottom-0 z-30 border-t border-neutral-800/80 bg-neutral-950/95 px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur md:hidden">
+            <div class="mx-auto flex w-full max-w-3xl items-center gap-2">
+                <button type="button"
+                    class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors"
+                    :class="mobileTocOpen ? 'border-emerald-500/80 bg-emerald-500/10 text-emerald-300' : 'border-neutral-700 bg-neutral-900/80 text-neutral-100 hover:border-emerald-500/70 hover:text-emerald-300'"
+                    :aria-expanded="mobileTocOpen" aria-controls="mobile-toc-panel" @click="openMobileToc">
+                    {{ t("tableOfContents") }}
+                </button>
+                <button type="button"
+                    class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors"
+                    :class="mobileNavOpen ? 'border-emerald-500/80 bg-emerald-500/10 text-emerald-300' : 'border-neutral-700 bg-neutral-900/80 text-neutral-100 hover:border-emerald-500/70 hover:text-emerald-300'"
+                    :aria-expanded="mobileNavOpen" aria-controls="mobile-nav-panel" @click="openMobileNav">
+                    {{ t("pages") }}
+                </button>
+            </div>
+        </div>
+
+        <transition enter-active-class="transition-transform duration-200" enter-from-class="-translate-x-full"
+            enter-to-class="translate-x-0" leave-active-class="transition-transform duration-200"
+            leave-from-class="translate-x-0" leave-to-class="-translate-x-full">
+            <aside id="mobile-toc-panel" v-if="mobileTocOpen"
+                class="fixed inset-y-0 left-0 z-50 w-[86%] max-w-sm overflow-y-auto border-r border-neutral-800 bg-neutral-900 px-4 py-5 md:hidden">
+                <div class="mb-5 flex items-center justify-between">
+                    <h2 class="text-base font-semibold text-white">{{ t("tableOfContents") }}</h2>
+                    <button type="button"
+                        class="rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-200"
+                        @click="mobileTocOpen = false">
+                        {{ t("close") }}
+                    </button>
+                </div>
+
+                <nav class="space-y-1 text-sm text-neutral-300">
+                    <a v-for="item in tocEntries" :key="`mobile-${item.href}`" :href="item.href"
+                        @click.prevent="scrollToHeading(item.href)"
+                        class="group flex items-center justify-between rounded-lg border border-transparent px-3 py-2 transition-all duration-200 hover:border-neutral-800 hover:bg-neutral-800/80 hover:text-white"
+                        :class="item.href === activeHeadingId ? 'text-emerald-400 border-l-2 border-emerald-500 bg-emerald-500/5' : ''">
+                        <span class="min-w-0 truncate" :class="tocLabelClass(item.level)">{{ item.label }}</span>
+                        <span
+                            class="text-[10px] text-neutral-600 opacity-0 transition-all duration-150 group-hover:opacity-100 group-hover:text-emerald-300">#</span>
+                    </a>
+
+                    <p v-if="tocEntries.length === 0" class="rounded-lg px-3 py-2 text-xs text-neutral-500">
+                        {{ t("noHeadingsFound") }}
+                    </p>
+                </nav>
+            </aside>
+        </transition>
+
+        <transition enter-active-class="transition-transform duration-200" enter-from-class="translate-x-full"
+            enter-to-class="translate-x-0" leave-active-class="transition-transform duration-200"
+            leave-from-class="translate-x-0" leave-to-class="translate-x-full">
+            <aside id="mobile-nav-panel" v-if="mobileNavOpen"
+                class="fixed inset-y-0 right-0 z-50 w-[86%] max-w-sm overflow-y-auto border-l border-neutral-800 bg-neutral-900 px-4 py-5 md:hidden">
+                <div class="mb-5 flex items-center justify-between">
+                    <h2 class="text-base font-semibold text-white">{{ t("pages") }}</h2>
+                    <button type="button"
+                        class="rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-200"
+                        @click="mobileNavOpen = false">
+                        {{ t("close") }}
+                    </button>
+                </div>
+
+                <nav class="space-y-1 text-sm text-neutral-300">
+                    <button v-for="item in navigatorEntries" :key="`mobile-${item.slug || item.href}`" type="button"
+                        @click="handlePageChange(item.slug || defaultNavigatorSlug)"
+                        class="block w-full rounded-lg px-3 py-2 text-left transition-all duration-200 hover:bg-neutral-800/80 hover:text-white"
+                        :class="[item.isActive ? 'bg-neutral-800/80 text-white' : '', item.slug === props.currentSlug ? 'bg-emerald-500/10 text-emerald-400 font-medium' : '']">
+                        {{ item.label }}
+                    </button>
+
+                    <p v-if="navigatorEntries.length === 0" class="rounded-lg px-3 py-2 text-xs text-neutral-500">
+                        {{ t("noPagesIndexed") }}
+                    </p>
+                </nav>
+            </aside>
+        </transition>
 
         <footer v-if="footerData" class="border-t border-neutral-800/80 bg-neutral-950/95">
             <div class="mx-auto w-full max-w-480 px-5 py-6 md:px-10 lg:px-14">
@@ -639,7 +815,11 @@ const tocLabelClass = (level?: number): string => {
                             :rel="link.external ? 'noopener noreferrer' : undefined" :aria-label="link.label"
                             :title="link.label"
                             class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-neutral-800/80 bg-neutral-900/70 text-neutral-300 transition-all duration-150 hover:border-emerald-500/70 hover:text-white">
-                            <component :is="resolveFooterIcon(link.icon)" class="h-4 w-4" aria-hidden="true" />
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path v-for="(path, index) in resolveFooterIconPaths(link.icon)" :key="index"
+                                    :d="path" />
+                            </svg>
                             <span class="sr-only">{{ link.label }}</span>
                         </a>
                     </nav>
