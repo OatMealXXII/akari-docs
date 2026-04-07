@@ -234,4 +234,4 @@ npm publish --access public
 
 If you find **Akari-Docs** helpful and want to support my work, you can buy me a coffee\! ☕✨
 
-[<b>Ko-Fi<b>](https://ko-fi.com/oatmealxxii) or [<b>Buy me a coffee<b>](https://buymeacoffee.com/oatmealxxii)
+[![BuyMeACoffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/oatmealxxii) [![Patreon](https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white)](https://patreon.com/OatMeal22015) [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/oatmealxxii)
