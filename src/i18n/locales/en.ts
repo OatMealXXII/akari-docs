@@ -19,5 +19,5 @@ export const enMessages = {
   loading: "Loading...",
 } as const;
 
-export type LocaleMessageSchema = typeof enMessages;
-export type TranslationKey = keyof LocaleMessageSchema;
+export type TranslationKey = keyof typeof enMessages;
+export type LocaleMessageSchema = Record<TranslationKey, string>;
