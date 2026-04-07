@@ -23,8 +23,11 @@ jobs:
       - name: Audit check
         run: npm audit --audit-level=high
 
-      - name: Build project
-        run: npm run build
+      - name: Build library package
+        run: npm run build:lib
+
+      - name: Validate publish artifact
+        run: npm pack --dry-run
 
       - name: Check version and Publish
         shell: bash
