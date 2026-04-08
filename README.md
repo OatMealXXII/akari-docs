@@ -36,7 +36,7 @@ Akari-Docs fixes those pain points with a focused API:
 
 Use this section for npm and GitHub conversion. Replace placeholders with your real numbers.
 
-### Benchmarks
+<!-- ### Benchmarks
 
 | Metric                                   | Akari-Docs   | Typical Custom Setup |
 | ---------------------------------------- | ------------ | -------------------- |
@@ -47,7 +47,7 @@ Use this section for npm and GitHub conversion. Replace placeholders with your r
 ### Adopters
 
 - Trusted by: `<Team A>`, `<Team B>`, `<Open-source Project C>`
-- Production use cases: `<Internal docs>`, `<SDK docs>`, `<Product docs portal>`
+- Production use cases: `<Internal docs>`, `<SDK docs>`, `<Product docs portal>` -->
 
 ### GitHub and npm CTA
 
@@ -82,6 +82,8 @@ If these do not apply, Akari-Docs is a strong fit when you want speed, control, 
 - [Build and Publish Notes](#build-and-publish-notes)
 
 ## Install
+
+<b>`** Requires Node.js 24+ for optimal performance.`</b>
 
 ```bash
 npm install akari-docs
@@ -141,7 +143,7 @@ your-project/
 ```ts
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
-import { akariMarkdownPlugin } from "akari-docs";
+import { akariMarkdownPlugin } from "akari-docs/plugin";
 
 export default defineConfig({
   plugins: [vue(), akariMarkdownPlugin()],
@@ -162,25 +164,12 @@ createApp(App).mount("#app");
 
 For a simpler integration, use `createDocsRuntime` and pass only arguments. It gives you ready-to-use state and handlers (`currentModule`, `tocItems`, `navigatorItems`, `onPageChange`) with minimal wiring.
 
-If you are testing **inside this repository/project** (without consuming the published npm package), import your local layout component:
-
-```ts
-import Layout from "./components/LocalLayout.vue";
-```
-
-If you are consuming the published package in another app, keep using:
-
-```ts
-import { Layout } from "akari-docs";
-```
-
 ```vue
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
-import Layout from "./components/LocalLayout.vue";
+import { Layout, createDocsRuntime } from "akari-docs/runtime";
 import { markdownIndex } from "virtual:akari-md-index";
-import { createDocsRuntime } from "akari-docs";
 
 interface MarkdownHeading {
   readonly level: number;
@@ -198,7 +187,6 @@ const markdownModules = import.meta.glob<LoadedMarkdownModule>(
   "./content/*.md",
 );
 
-const currentSlug = ref("introduction");
 const router = useRouter();
 
 const docs = createDocsRuntime({
@@ -212,10 +200,6 @@ const currentModule = computed(() => docs.currentModule.value);
 const currentSlugRef = computed(() => docs.currentSlug.value);
 const tocItems = computed(() => docs.tocItems.value);
 const navigatorItems = computed(() => docs.navigatorItems.value);
-
-async function loadPage(slug: string) {
-  await docs.loadPage(slug, "en");
-}
 
 function handlePageChange(slug: string) {
   void docs.onPageChange(slug, async (nextSlug, locale) => {
@@ -326,11 +310,12 @@ With `akariMarkdownPlugin` enabled:
 
 ## Package Exports
 
-| Import Path            | What You Get                                      |
-| ---------------------- | ------------------------------------------------- |
-| `akari-docs`           | `Layout`, `akariMarkdownPlugin`, and public types |
-| `akari-docs/plugin`    | Plugin-only entry (`akariMarkdownPlugin`)         |
-| `akari-docs/style.css` | Stable stylesheet export                          |
+| Import Path            | What You Get                                                 |
+| ---------------------- | ------------------------------------------------------------ |
+| `akari-docs`           | Legacy combined entry (runtime + plugin exports)             |
+| `akari-docs/runtime`   | Runtime entry (`Layout`, i18n helpers, docs runtime helpers) |
+| `akari-docs/plugin`    | Plugin-only entry (`akariMarkdownPlugin`)                    |
+| `akari-docs/style.css` | Stable stylesheet export                                     |
 
 ## Plugin Hooks
 

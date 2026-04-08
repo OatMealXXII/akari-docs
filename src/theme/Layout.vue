@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch, onBeforeUnmount, onMounted, nextTick } from "vue";
+import {
+    computed,
+    ref,
+    watch,
+    onBeforeUnmount,
+    onMounted,
+    nextTick,
+} from "vue";
 import {
     DEFAULT_HEADING_SCROLL_OFFSET,
     buildTocHrefById,
@@ -49,9 +56,11 @@ export interface FooterData {
 export interface LayoutProps {
     readonly frontmatter?: FrontmatterData;
     readonly onPageChange?: (slug: string) => void;
+    readonly onLocaleChange?: (locale: LocaleCode) => void;
     readonly tocItems?: readonly TocItem[];
     readonly navigatorItems?: readonly NavItem[];
     readonly currentSlug?: string;
+    readonly locale?: LocaleCode;
     readonly footer?: FooterData;
 }
 
@@ -67,8 +76,21 @@ const handleLocaleChange = (event: Event) => {
     const nextLocale = target?.value;
     if (nextLocale === "en" || nextLocale === "th") {
         void setLocale(nextLocale);
+        props.onLocaleChange?.(nextLocale);
     }
 };
+
+watch(
+    () => props.locale,
+    (nextLocale) => {
+        if (!nextLocale || nextLocale === locale.value) {
+            return;
+        }
+
+        void setLocale(nextLocale);
+    },
+    { immediate: true },
+);
 
 const leftSidebarOpen = ref(true);
 const rightSidebarOpen = ref(true);
@@ -143,11 +165,16 @@ let headingInitTimer: ReturnType<typeof setTimeout> | null = null;
 let headingScrollRaf: number | null = null;
 let headingScrollBound = false;
 let trackedHeadings: HTMLElement[] = [];
-let trackedHeadingScrollSnapshot: Array<{ id: string; top: number; isConnected: boolean }> = [];
+let trackedHeadingScrollSnapshot: Array<{
+    id: string;
+    top: number;
+    isConnected: boolean;
+}> = [];
 let trackedTocHrefById = new Map<string, string>();
 let trackedLayoutHeight = 0;
 let headingOffsetsDirty = true;
-const supportsDom = typeof window !== "undefined" && typeof document !== "undefined";
+const supportsDom =
+    typeof window !== "undefined" && typeof document !== "undefined";
 const HEADING_SCROLL_OFFSET = DEFAULT_HEADING_SCROLL_OFFSET;
 
 const closeMobilePanels = () => {
@@ -202,7 +229,8 @@ const refreshHeadingScrollSnapshot = () => {
     }
 
     const connectedHeadings = trackedHeadings.filter(
-        (heading) => heading.isConnected && normalizeHeadingId(heading.id).length > 0,
+        (heading) =>
+            heading.isConnected && normalizeHeadingId(heading.id).length > 0,
     );
 
     if (connectedHeadings.length !== trackedHeadings.length) {
@@ -345,7 +373,8 @@ const initHeadingObserver = () => {
     const content = document.getElementById("content");
     if (!content) return;
 
-    const getHeadings = () => Array.from(content.querySelectorAll("h2, h3")) as HTMLElement[];
+    const getHeadings = () =>
+        Array.from(content.querySelectorAll("h2, h3")) as HTMLElement[];
 
     const attemptInit = (headingsArr?: HTMLElement[]) => {
         const headings = headingsArr ?? getHeadings();
@@ -364,34 +393,39 @@ const initHeadingObserver = () => {
         if (typeof window.IntersectionObserver === "function") {
             const visibleMap = new Map<HTMLElement, IntersectionObserverEntry>();
 
-            headingObserver = new IntersectionObserver((entries) => {
-                entries.forEach((entry) => {
-                    const el = entry.target as HTMLElement;
-                    if (!el.id) return;
-                    if (entry.isIntersecting) {
-                        visibleMap.set(el, entry);
-                    } else {
-                        visibleMap.delete(el);
+            headingObserver = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        const el = entry.target as HTMLElement;
+                        if (!el.id) return;
+                        if (entry.isIntersecting) {
+                            visibleMap.set(el, entry);
+                        } else {
+                            visibleMap.delete(el);
+                        }
+                    });
+
+                    if (visibleMap.size > 0) {
+                        const vals = Array.from(visibleMap.values());
+                        vals.sort(
+                            (a, b) => a.boundingClientRect.top - b.boundingClientRect.top,
+                        );
+                        const topEntry = vals[0];
+                        const id = (topEntry.target as HTMLElement).id;
+                        activeHeadingId.value = id ? toActiveHref(id, tocHrefById) : null;
+                        return;
                     }
-                });
 
-                if (visibleMap.size > 0) {
-                    const vals = Array.from(visibleMap.values());
-                    vals.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-                    const topEntry = vals[0];
-                    const id = (topEntry.target as HTMLElement).id;
-                    activeHeadingId.value = id ? toActiveHref(id, tocHrefById) : null;
-                    return;
-                }
-
-                refreshHeadingScrollSnapshot();
-                activeHeadingId.value = resolveActiveHeadingByScroll(
-                    trackedHeadingScrollSnapshot,
-                    tocHrefById,
-                    window.scrollY,
-                    HEADING_SCROLL_OFFSET,
-                );
-            }, { root: null, rootMargin, threshold });
+                    refreshHeadingScrollSnapshot();
+                    activeHeadingId.value = resolveActiveHeadingByScroll(
+                        trackedHeadingScrollSnapshot,
+                        tocHrefById,
+                        window.scrollY,
+                        HEADING_SCROLL_OFFSET,
+                    );
+                },
+                { root: null, rootMargin, threshold },
+            );
 
             monitorList.forEach((heading) => {
                 const id = normalizeHeadingId(heading.id);
@@ -451,13 +485,12 @@ const initHeadingObserver = () => {
 // Re-create the observer whenever the current slug / route changes. Use
 // nextTick() to wait until the new markdown content has been rendered into
 // the DOM before querying for headings.
-const tocSignature = computed(() => (props.tocItems ?? []).map((item) => String(item.href ?? "")).join("|"));
+const tocSignature = computed(() =>
+    (props.tocItems ?? []).map((item) => String(item.href ?? "")).join("|"),
+);
 
 watch(
-    [
-        () => props.currentSlug,
-        () => tocSignature.value,
-    ],
+    [() => props.currentSlug, () => tocSignature.value],
     async () => {
         cleanupHeadingTracking();
         await nextTick();
@@ -520,15 +553,8 @@ const footerIconPathMap: Record<FooterIconName, readonly string[]> = {
     github: [
         "M9 19c-5 1.5-5-2.5-7-3m14 6v-3.9a3.4 3.4 0 0 0-.9-2.6c3-.3 6.2-1.5 6.2-6.7A5.2 5.2 0 0 0 20 5.2 4.8 4.8 0 0 0 19.9 2S18.8 1.7 16 3.6a13.3 13.3 0 0 0-7 0C6.2 1.7 5.1 2 5.1 2A4.8 4.8 0 0 0 5 5.2a5.2 5.2 0 0 0-1.3 3.6c0 5.2 3.2 6.4 6.2 6.7A3.4 3.4 0 0 0 9 18.1V22",
     ],
-    home: [
-        "M3 10.5 12 3l9 7.5",
-        "M5 10v10h14V10",
-    ],
-    external: [
-        "M14 3h7v7",
-        "M10 14 21 3",
-        "M21 14v7H3V3h7",
-    ],
+    home: ["M3 10.5 12 3l9 7.5", "M5 10v10h14V10"],
+    external: ["M14 3h7v7", "M10 14 21 3", "M21 14v7H3V3h7"],
     link: [
         "M10 13a5 5 0 0 0 7.1 0l2.1-2.1a5 5 0 0 0-7.1-7.1L10 5",
         "M14 11a5 5 0 0 0-7.1 0L4.8 13.1a5 5 0 1 0 7.1 7.1L14 19",
@@ -559,17 +585,23 @@ const safeFrontmatter = computed<FrontmatterData>(() => {
 
 const safeAuthor = computed(() => {
     const author = safeFrontmatter.value.author;
-    return typeof author === "string" && author.trim().length > 0 ? author : t("unknown");
+    return typeof author === "string" && author.trim().length > 0
+        ? author
+        : t("unknown");
 });
 
 const safeDescription = computed(() => {
     const description = safeFrontmatter.value.description;
-    return typeof description === "string" && description.trim().length > 0 ? description : "-";
+    return typeof description === "string" && description.trim().length > 0
+        ? description
+        : "-";
 });
 
 const safeTitle = computed(() => {
     const title = safeFrontmatter.value.title;
-    return typeof title === "string" && title.trim().length > 0 ? title : "Akari Docs";
+    return typeof title === "string" && title.trim().length > 0
+        ? title
+        : "Akari Docs";
 });
 
 // Smooth scroll to heading and update URL hash without jumping
@@ -579,7 +611,8 @@ const scrollToHeading = (href: string) => {
     const id = href.startsWith("#") ? href.slice(1) : href;
     const el = document.getElementById(id);
     if (!el) return;
-    const top = el.getBoundingClientRect().top + window.scrollY - HEADING_SCROLL_OFFSET;
+    const top =
+        el.getBoundingClientRect().top + window.scrollY - HEADING_SCROLL_OFFSET;
     activeHeadingId.value = toActiveHref(id, trackedTocHrefById) ?? `#${id}`;
     window.scrollTo({ top, behavior: "smooth" });
     closeMobilePanels();
@@ -651,7 +684,7 @@ const tocLabelClass = (level?: number): string => {
                     <header id="document-preview" class="space-y-3 border-b border-neutral-800/80 pb-6">
                         <div class="flex items-start justify-between gap-4">
                             <p class="text-[11px] uppercase tracking-[0.25em] text-neutral-500">{{ t("documentPreview")
-                                }}</p>
+                            }}</p>
                             <label class="inline-flex items-center gap-2 text-[11px] text-neutral-400"
                                 :aria-label="t('language')">
                                 <span>{{ t("language") }}</span>

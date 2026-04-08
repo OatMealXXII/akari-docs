@@ -1,6 +1,6 @@
 export { scanDocsForRouting } from "./docsScanner";
 export type {
-  ScanDocsOptions,
-  ScanDocsResult,
-  ScannedDocFile,
+	ScanDocsOptions,
+	ScanDocsResult,
+	ScannedDocFile,
 } from "./docsScanner";

@@ -74,9 +74,11 @@ export interface FooterData {
 export interface LayoutProps {
   readonly frontmatter?: FrontmatterData;
   readonly onPageChange?: (slug: string) => void;
+  readonly onLocaleChange?: (locale: "en" | "th") => void;
   readonly tocItems?: readonly TocItem[];
   readonly navigatorItems?: readonly NavItem[];
   readonly currentSlug?: string;
+  readonly locale?: "en" | "th";
   readonly footer?: FooterData;
 }
 
@@ -163,6 +165,24 @@ export interface DocsRuntime {
   ) => Promise<void>;
 }
 
+export type LocaleCode = "en" | "th";
+export type FrontmatterTranslatableKey = "title" | "description";
+
+export interface LiteI18nApi {
+  readonly locale: import("vue").Ref<LocaleCode>;
+  readonly localeLabel: import("vue").ComputedRef<string>;
+  readonly isLocaleReady: import("vue").Ref<boolean>;
+  readonly t: (key: string) => string;
+  readonly setLocale: (nextLocale: LocaleCode) => Promise<void>;
+  readonly toggleLocale: () => Promise<void>;
+  readonly ensureLocaleLoaded: () => Promise<void>;
+  readonly isLocaleCode: (value: string | null) => boolean;
+  readonly getOptionalTranslatedFrontmatter: (
+    frontmatter: Readonly<Record<string, unknown>> | undefined,
+    key: FrontmatterTranslatableKey,
+  ) => string | undefined;
+}
+
 export declare function akariMarkdownPlugin(
   options?: AkariMarkdownPluginOptions,
 ): Plugin;
@@ -183,3 +203,4 @@ export declare function createDocsApi(options: CreateDocsApiOptions): DocsApi;
 export declare function createDocsRuntime(
   options: CreateDocsRuntimeOptions,
 ): DocsRuntime;
+export declare function useLiteI18n(): LiteI18nApi;

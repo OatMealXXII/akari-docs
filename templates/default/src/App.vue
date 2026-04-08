@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { Layout, type FooterData, type FrontmatterValue } from "akari-docs";
+import {
+  Layout,
+  useLiteI18n,
+  type FooterData,
+  type FrontmatterValue,
+  type LocaleCode,
+} from "akari-docs/runtime";
 import { markdownIndex } from "virtual:akari-md-index";
 import { siteFooter } from "./config/site";
-import { useLiteI18n, type LocaleCode } from "./i18n/lite";
 
 interface MarkdownHeading {
   readonly level: number;
@@ -33,7 +38,9 @@ interface PageIndexItem {
   readonly metadata: FrontmatterData;
 }
 
-const markdownModules = import.meta.glob<LoadedMarkdownModule>("./content/*.md");
+const markdownModules = import.meta.glob<LoadedMarkdownModule>(
+  "./content/*.md",
+);
 const LOCALIZED_SLUG_SUFFIX = /\.(en|th)$/;
 
 const currentSlug = ref<string>("");
@@ -42,7 +49,6 @@ const isLoading = ref(false);
 const {
   ensureLocaleLoaded,
   getOptionalTranslatedFrontmatter,
-  isLocaleCode,
   locale,
   setLocale,
   t,
@@ -60,7 +66,8 @@ const pageIndexBySlug = computed<Record<string, PageIndexItem>>(() => {
 
 const navigatorItems = computed(() =>
   pageIndex.value.map((item) => ({
-    label: getOptionalTranslatedFrontmatter(item.metadata, "title") ?? item.label,
+    label:
+      getOptionalTranslatedFrontmatter(item.metadata, "title") ?? item.label,
     slug: item.slug,
     href: `/${locale.value}/${item.slug}`,
     isActive: item.slug === currentSlug.value,
@@ -80,13 +87,17 @@ const tocItems = computed(() => {
 
 const frontmatter = computed<FrontmatterData>(() => {
   const metadata =
-    currentModule.value?.metadata ?? pageIndexBySlug.value[currentSlug.value]?.metadata ?? {};
+    currentModule.value?.metadata ??
+    pageIndexBySlug.value[currentSlug.value]?.metadata ??
+    {};
 
   return {
     ...metadata,
-    title: getOptionalTranslatedFrontmatter(metadata, "title") ?? metadata.title,
+    title:
+      getOptionalTranslatedFrontmatter(metadata, "title") ?? metadata.title,
     description:
-      getOptionalTranslatedFrontmatter(metadata, "description") ?? metadata.description,
+      getOptionalTranslatedFrontmatter(metadata, "description") ??
+      metadata.description,
   };
 });
 
@@ -108,7 +119,8 @@ async function loadPage(slug: string): Promise<void> {
 
   const localizedPath = `./content/${targetSlug}.${locale.value}.md`;
   const fallbackPath = `./content/${targetSlug}.md`;
-  const loader = markdownModules[localizedPath] ?? markdownModules[fallbackPath];
+  const loader =
+    markdownModules[localizedPath] ?? markdownModules[fallbackPath];
   if (!loader) {
     return;
   }
@@ -137,9 +149,20 @@ function handlePageChange(slug: string): void {
   });
 }
 
-function normalizeRoute(path: string): { localeFromPath: LocaleCode | null; slug: string } {
+function handleLocaleChange(nextLocale: LocaleCode): void {
+  if (nextLocale === locale.value) {
+    return;
+  }
+
+  void setLocale(nextLocale);
+}
+
+function normalizeRoute(path: string): {
+  localeFromPath: LocaleCode | null;
+  slug: string;
+} {
   const [segmentA = "", segmentB = ""] = path.replace(/^\//, "").split("/");
-  if (isLocaleCode(segmentA)) {
+  if (segmentA === "en" || segmentA === "th") {
     return { localeFromPath: segmentA, slug: segmentB };
   }
 
@@ -149,7 +172,7 @@ function normalizeRoute(path: string): { localeFromPath: LocaleCode | null; slug
 function getFallbackSlug(): string {
   return pageIndexBySlug.value.introduction
     ? "introduction"
-    : pageIndex.value[0]?.slug ?? "";
+    : (pageIndex.value[0]?.slug ?? "");
 }
 
 async function syncLocaleRoute(path: string): Promise<void> {
@@ -167,7 +190,9 @@ async function syncLocaleRoute(path: string): Promise<void> {
   }
 
   if (!localeFromPath) {
-    await router.replace({ path: `/${locale.value}/${targetSlug}` }).catch(() => undefined);
+    await router
+      .replace({ path: `/${locale.value}/${targetSlug}` })
+      .catch(() => undefined);
     return;
   }
 
@@ -201,20 +226,12 @@ watch(
 </script>
 
 <template>
-  <Layout
-    :frontmatter="frontmatter"
-    :on-page-change="handlePageChange"
-    :toc-items="tocItems"
-    :navigator-items="navigatorItems"
-    :current-slug="currentSlug"
-    :footer="footerData"
-  >
+  <Layout :frontmatter="frontmatter" :on-page-change="handlePageChange" :toc-items="tocItems"
+    :on-locale-change="handleLocaleChange" :navigator-items="navigatorItems" :current-slug="currentSlug"
+    :locale="locale" :footer="footerData">
     <transition name="fade" mode="out-in">
-      <article
-        v-if="currentModule && !isLoading"
-        key="page"
-        class="prose prose-invert max-w-none prose-green prose-headings:scroll-mt-24 prose-pre:border prose-pre:border-neutral-800 prose-pre:bg-neutral-900 prose-pre:rounded-2xl"
-      >
+      <article v-if="currentModule && !isLoading" key="page"
+        class="prose prose-invert max-w-none prose-green prose-headings:scroll-mt-24 prose-pre:border prose-pre:border-neutral-800 prose-pre:bg-neutral-900 prose-pre:rounded-2xl">
         <component :is="currentModule.default" />
       </article>
 

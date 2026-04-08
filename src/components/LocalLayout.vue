@@ -40,33 +40,33 @@
 
 <script setup lang="ts">
 export interface LocalLayoutNavItem {
-    readonly label: string;
-    readonly href: string;
-    readonly slug?: string;
-    readonly isActive?: boolean;
+	readonly label: string;
+	readonly href: string;
+	readonly slug?: string;
+	readonly isActive?: boolean;
 }
 
 export interface LocalLayoutTocItem {
-    readonly label: string;
-    readonly href: string;
-    readonly level?: number;
+	readonly label: string;
+	readonly href: string;
+	readonly level?: number;
 }
 
 export interface LocalLayoutProps {
-    readonly frontmatter?: Readonly<Record<string, unknown>>;
-    readonly tocItems?: readonly LocalLayoutTocItem[];
-    readonly navigatorItems?: readonly LocalLayoutNavItem[];
-    readonly currentSlug?: string;
-    readonly onPageChange?: (slug: string) => void;
+	readonly frontmatter?: Readonly<Record<string, unknown>>;
+	readonly tocItems?: readonly LocalLayoutTocItem[];
+	readonly navigatorItems?: readonly LocalLayoutNavItem[];
+	readonly currentSlug?: string;
+	readonly onPageChange?: (slug: string) => void;
 }
 
 const props = defineProps<LocalLayoutProps>();
 
 function change(slug?: string) {
-    if (!slug) {
-        return;
-    }
+	if (!slug) {
+		return;
+	}
 
-    props.onPageChange?.(slug);
+	props.onPageChange?.(slug);
 }
 </script>

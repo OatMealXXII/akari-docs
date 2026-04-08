@@ -1,15 +1,16 @@
 {
   "name": "akari-docs-starter",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.8",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "build": "vite build",
+    "typecheck": "vue-tsc -b",
     "preview": "vite preview"
   },
   "dependencies": {
-    "akari-docs": "^0.1.7",
+    "akari-docs": "file:..",
     "vue": "^3.5.30",
     "vue-router": "^5.0.4"
   },

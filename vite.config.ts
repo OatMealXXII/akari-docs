@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => {
         lib: {
           entry: {
             index: "src/index.ts",
+            runtime: "src/runtime.ts",
             plugin: "src/plugin.ts",
           },
           name: "AkariDocs",
@@ -36,5 +37,8 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [tailwindcss(), vue(), akariMarkdownPlugin()],
+    build: {
+      outDir: "site-dist",
+    },
   };
 });

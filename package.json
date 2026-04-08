@@ -2,7 +2,8 @@
   "name": "akari-docs",
   "description": "Akari-Docs is a zero-bloat documentation framework built for speed, simplicity, and clean markdown-driven publishing.",
   "private": false,
-  "version": "0.1.8",
+  "version": "0.1.9",
+  "type": "module",
   "bin": {
     "akari-docs": "./bin/akari-docs.mjs"
   },
@@ -19,6 +20,11 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./runtime": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/runtime.js",
+      "default": "./dist/runtime.js"
+    },
     "./plugin": {
       "types": "./dist/plugin.d.ts",
       "import": "./dist/plugin.js",
@@ -34,9 +40,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "init:starter:local": "node ./bin/akari-docs.mjs init ./akari-docs-starter",
+    "init:starter:local": "node ./bin/akari-docs.mjs init ./.sandbox/akari-docs-starter",
     "build:lib": "vue-tsc -b && vite build --mode lib && node -e \"const fs=require('node:fs');const path=require('node:path');fs.copyFileSync('src/index.d.ts','dist/index.d.ts');fs.copyFileSync('src/plugin.d.ts','dist/plugin.d.ts');const css=fs.readdirSync('dist').find((name)=>name.endsWith('.css'));if(css){fs.copyFileSync(path.join('dist',css),path.join('dist','style.css'));}\"",
-    "preview": "vite preview",
+    "preview": "vite preview --outDir site-dist",
     "test": "vitest run --passWithNoTests",
     "prepublishOnly": "npm run test && npm run build:lib"
   },

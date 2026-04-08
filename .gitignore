@@ -4,6 +4,7 @@ node_modules/
 
 # Build outputs
 dist/
+site-dist/
 dist-ssr/
 *.local
 
@@ -32,3 +33,8 @@ Thumbs.db
 .netlify/
 .output/
 .vercel
+
+# Generated local starter sandboxes
+.sandbox/
+akari-docs-starter-tmp*/
+akari-docs-starter-audit/
