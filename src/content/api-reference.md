@@ -9,14 +9,16 @@ order: 3
 
 ## Package Exports
 
-| Import Path            | What You Get                                                       |
-| ---------------------- | ------------------------------------------------------------------ |
-| `akari-docs`           | `Layout`, `akariMarkdownPlugin`, runtime helpers, and public types |
-| `akari-docs/plugin`    | Plugin-only entry (`akariMarkdownPlugin`)                          |
-| `akari-docs/style.css` | Stable stylesheet export                                           |
+| Import Path            | What You Get                                                      |
+| ---------------------- | ----------------------------------------------------------------- |
+| `akari-docs`           | Legacy combined entry (runtime + plugin exports)                  |
+| `akari-docs/runtime`   | `Layout`, i18n helpers, runtime helpers, and runtime-facing types |
+| `akari-docs/plugin`    | Plugin-only entry (`akariMarkdownPlugin`)                         |
+| `akari-docs/style.css` | Stable stylesheet export                                          |
 
 ```ts
-import { akariMarkdownPlugin, createDocsRuntime, Layout } from "akari-docs";
+import { Layout, createDocsRuntime } from "akari-docs/runtime";
+import { akariMarkdownPlugin } from "akari-docs/plugin";
 import type {
   FrontmatterData,
   FrontmatterValue,
@@ -24,7 +26,7 @@ import type {
   TocItem,
   NavItem,
   FooterData,
-} from "akari-docs";
+} from "akari-docs/runtime";
 ```
 
 ## `akariMarkdownPlugin(options?)`
@@ -115,7 +117,7 @@ Use `createDocsRuntime` when you want one-call setup for `currentModule`, `tocIt
 Example:
 
 ```ts
-import { akariMarkdownPlugin } from "akari-docs";
+import { akariMarkdownPlugin } from "akari-docs/plugin";
 
 akariMarkdownPlugin({
   hooks: [

@@ -2,7 +2,7 @@
   "name": "akari-docs",
   "description": "Akari-Docs is a zero-bloat documentation framework built for speed, simplicity, and clean markdown-driven publishing.",
   "private": false,
-  "version": "0.1.9",
+  "version": "0.2.0",
   "type": "module",
   "bin": {
     "akari-docs": "./bin/akari-docs.mjs"

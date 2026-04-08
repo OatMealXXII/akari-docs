@@ -10,7 +10,8 @@ order: 3
 ## Package Exports
 
 ```ts
-import { akariMarkdownPlugin, Layout } from "akari-docs";
+import { Layout } from "akari-docs/runtime";
+import { akariMarkdownPlugin } from "akari-docs/plugin";
 import type {
   FrontmatterData,
   FrontmatterValue,
@@ -18,7 +19,7 @@ import type {
   TocItem,
   NavItem,
   FooterData,
-} from "akari-docs";
+} from "akari-docs/runtime";
 ```
 
 Plugin-only import path:

@@ -53,7 +53,7 @@ Akari-Docs applies defensive sanitization by default in markdown rendering paths
 Example:
 
 ```ts
-import { akariMarkdownPlugin } from "akari-docs";
+import { akariMarkdownPlugin } from "akari-docs/plugin";
 
 export default {
   plugins: [

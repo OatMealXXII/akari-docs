@@ -45,7 +45,7 @@ npm install vue vue-router
 ```ts
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
-import { akariMarkdownPlugin } from "akari-docs";
+import { akariMarkdownPlugin } from "akari-docs/plugin";
 
 export default defineConfig({
   plugins: [vue(), akariMarkdownPlugin()],
@@ -66,7 +66,7 @@ createApp(App).mount("#app");
 
 ```vue
 <script setup lang="ts">
-import { Layout } from "akari-docs";
+import { Layout } from "akari-docs/runtime";
 
 const tocItems = [
   { label: "Overview", href: "#overview", level: 2 },
