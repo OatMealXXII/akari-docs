@@ -55,7 +55,7 @@ your-project/
 ```ts
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
-import { akariMarkdownPlugin } from "akari-docs";
+import { akariMarkdownPlugin } from "akari-docs/plugin";
 
 export default defineConfig({
   plugins: [vue(), akariMarkdownPlugin()],
@@ -78,7 +78,7 @@ createApp(App).mount("#app");
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRouter } from "vue-router";
-import { Layout, createDocsRuntime } from "akari-docs";
+import { Layout, createDocsRuntime } from "akari-docs/runtime";
 import { markdownIndex } from "virtual:akari-md-index";
 
 interface MarkdownHeading {

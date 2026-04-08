@@ -28,9 +28,10 @@ Akari-Docs fixes those pain points with a focused API:
 - Typed markdown output: predictable module shape across your docs pages.
 - `Layout`: a drop-in docs layout with robust heading tracking (optimized for `h2` and `h3`).
 - Stable exports:
-  - `akari-docs`
+  - `akari-docs/runtime`
   - `akari-docs/plugin`
   - `akari-docs/style.css`
+  - `akari-docs` (legacy combined entry)
 
 ## Social Proof (Placeholders)
 
@@ -69,6 +70,7 @@ If these do not apply, Akari-Docs is a strong fit when you want speed, control, 
 - [Social Proof (Placeholders)](#social-proof-placeholders)
 - [When Not to Use Akari-Docs](#when-not-to-use-akari-docs)
 - [Install](#install)
+- [Starter Template (init)](#starter-template-init)
 - [Quick Start](#quick-start)
 - [Quick Start File Map](#quick-start-file-map)
 - [Recommended Project Structure](#recommended-project-structure)
@@ -285,7 +287,7 @@ Akari-Docs now applies defensive sanitization by default in markdown rendering p
 Example:
 
 ```ts
-import { akariMarkdownPlugin } from "akari-docs";
+import { akariMarkdownPlugin } from "akari-docs/plugin";
 
 export default {
   plugins: [
@@ -328,7 +330,7 @@ With `akariMarkdownPlugin` enabled:
 Example:
 
 ```ts
-import { akariMarkdownPlugin } from "akari-docs";
+import { akariMarkdownPlugin } from "akari-docs/plugin";
 
 akariMarkdownPlugin({
   hooks: [
