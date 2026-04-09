@@ -221,7 +221,7 @@ watch(
     :navigator-items="navigatorItems" :current-slug="currentSlug" :footer="footerData">
     <transition name="fade" mode="out-in">
       <article v-if="currentModule && !isLoading" key="page"
-        class="prose prose-invert max-w-none prose-green prose-headings:scroll-mt-24 prose-pre:border prose-pre:border-neutral-800 prose-pre:bg-neutral-900 prose-pre:rounded-2xl">
+				class="prose prose-invert max-w-none prose-headings:scroll-mt-24 prose-pre:border prose-pre:border-neutral-800 prose-pre:bg-neutral-900 prose-pre:rounded-2xl">
         <component :is="currentModule.default" />
       </article>
 

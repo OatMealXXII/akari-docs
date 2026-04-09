@@ -38,3 +38,6 @@ Thumbs.db
 .sandbox/
 akari-docs-starter-tmp*/
 akari-docs-starter-audit/
+
+*.tar.gz
+*.tar.xz

@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+:root {
+  /* Override Akari Docs tokens here */
+  /* Example:
+  --color-neutral-950: oklch(18% 0.02 265);
+  --color-neutral-900: oklch(24% 0.02 265);
+  --color-emerald-500: oklch(72% 0.16 165);
+  */
+
+  /* Optional prose overrides (content area):
+  --akari-prose-body: #d8e1ee;
+  --akari-prose-headings: #ffffff;
+  --akari-prose-links: #74f1ba;
+  --akari-prose-pre-bg: #141a24;
+  */
+}
